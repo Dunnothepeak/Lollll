@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NINTENDO SHEESH</title>
+<style>
+:root {
+    --red: #ff4554;
+    --blue: #00c3e3;
+    --dark: #050507;
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --glow: rgba(255, 255, 255, 0.15);
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    margin: 0;
+    padding: 0;
+}
+
+body, html {
+    width: 100%;
+    height: 100%;
+    background: var(--dark);
+    color: white;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden;
+    touch-action: none;
+}
+
+/* Background Effects */
+.bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(circle at 10% 20%, rgba(255, 69, 84, 0.15), transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 195, 227, 0.15), transparent 40%);
+    filter: blur(40px);
+    animation: pulseBg 12s infinite alternate;
+}
+
+.scanlines {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+    background-size: 100% 3px, 3px 100%;
+    pointer-events: none;
+    opacity: 0.4;
+}
+
+@keyframes pulseBg {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.1); }
+}
+
+#landscape-lock {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: black;
+    z-index: 10000;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+@media (orientation: portrait) {
+    #landscape-lock { display: flex; }
+}
+
+/* UI Elements */
+.screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s;
+}
+
+.hidden { 
+    transform: scale(0.9) translateY(20px);
+    opacity: 0;
+    pointer-events: none;
+}
+
+#boot {
+    z-index: 1000;
+    background: black;
+    justify-content: center;
+    align-items: center;
+}
+
+.logo-anim {
+    width: 80px;
+    height: 80px;
+    border: 6px solid var(--red);
+    border-right-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 2s infinite linear;
+    margin-bottom: 20px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+header {
+    padding: 30px 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 800;
+    letter-spacing: 2px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.carousel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    padding: 0 20%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+}
+
+.carousel::-webkit-scrollbar { display: none; }
+
+.card {
+    min-width: 320px;
+    height: 320px;
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    border: 2px solid rgba(255,255,255,0.1);
+    scroll-snap-align: center;
+    display: flex;
+    flex-direction: column;
+    transition: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    cursor: pointer;
+}
+
+.card:active {
+    transform: scale(1.1);
+    border-color: white;
+    box-shadow: 0 0 50px var(--glow);
+}
+
+.card-art {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 100px;
+}
+
+.card-info {
+    padding: 20px;
+    background: rgba(0,0,0,0.4);
+    text-align: center;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* Game Interface */
+canvas { width: 100%; height: 100%; }
+
+.hud {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#score-num {
+    font-size: 100px;
+    font-weight: 900;
+    margin-top: 20px;
+    color: white;
+    text-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.modal {
+    pointer-events: auto;
+    background: rgba(10, 10, 15, 0.95);
+    backdrop-filter: blur(20px);
+    padding: 60px;
+    border-radius: 40px;
+    text-align: center;
+    margin: auto;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+button {
+    padding: 20px 50px;
+    border: none;
+    border-radius: 50px;
+    font-weight: 900;
+    font-size: 16px;
+    margin: 10px;
+    transition: 0.2s;
+    text-transform: uppercase;
+}
+
+button:active { transform: scale(0.9); }
+
+.red { background: var(--red); color: white; box-shadow: 0 8px 0 #b32d39; }
+.blue { background: var(--blue); color: white; box-shadow: 0 8px 0 #0089a1; }
+.red:active, .blue:active { transform: translateY(4px); box-shadow: 0 4px 0 transparent; }
+
+</style>
+</head>
+<body>
+
+<div class="bg-layer"></div>
+<div class="scanlines"></div>
+
+<div id="landscape-lock">
+    <div class="logo-anim"></div>
+    <h2>ROTATE DEVICE</h2>
+    <p>Please enter Landscape Mode to play.</p>
+</div>
+
+<div id="boot" class="screen">
+    <div class="logo-anim"></div>
+    <button class="blue" id="btn-start" style="font-size: 20px">ENTER CONSOLE</button>
+</div>
+
+<div id="home" class="screen hidden">
+    <header>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <div style="width:20px; height:20px; background:var(--red); border-radius:4px;"></div>
+            <span>NINTENDO SHEESH</span>
+        </div>
+        <div id="time">00:00</div>
+    </header>
+    <div class="carousel">
+        <div class="card" id="go-fly">
+            <div class="card-art" style="background: linear-gradient(45deg, var(--red), #ff8e97)">🚀</div>
+            <div class="card-info">ASTRO FLYER</div>
+        </div>
+        <div class="card" id="go-jump">
+            <div class="card-art" style="background: linear-gradient(45deg, var(--blue), #87ecfc)">🧊</div>
+            <div class="card-info">GLACIER RUN</div>
+        </div>
+        <div class="card" id="go-dash">
+            <div class="card-art" style="background: linear-gradient(45deg, #444, #111)">⚡</div>
+            <div class="card-info">PULSE DASH</div>
+        </div>
+    </div>
+</div>
+
+<div id="game" class="screen hidden">
+    <canvas id="stage"></canvas>
+    <div class="hud">
+        <div id="score-num">0</div>
+        <div id="over" class="modal hidden">
+            <h1 style="font-size: 50px; margin-bottom: 20px">CRASHED</h1>
+            <button class="red" id="btn-retry">RETRY</button>
+            <button class="blue" id="btn-home">HOME</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('stage');
+const ctx = canvas.getContext('2d');
+let audio, state = { type: '', score: 0, active: false, f: 0 };
+let player = { x: 150, y: 0, v: 0, w: 45, h: 45 };
+let entities = [], particles = [];
+
+function sfx(f, d, t = 'sine') {
+    if (!audio) return;
+    const o = audio.createOscillator();
+    const g = audio.createGain();
+    o.type = t;
+    o.frequency.setValueAtTime(f, audio.currentTime);
+    g.gain.setValueAtTime(0.1, audio.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, audio.currentTime + d);
+    o.connect(g);
+    g.connect(audio.destination);
+    o.start();
+    o.stop(audio.currentTime + d);
+}
+
+function updateClock() {
+    const now = new Date();
+    document.getElementById('time').innerText = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
+}
+
+document.getElementById('btn-start').addEventListener('pointerdown', () => {
+    audio = new (window.AudioContext || window.webkitAudioContext)();
+    document.getElementById('boot').classList.add('hidden');
+    document.getElementById('home').classList.remove('hidden');
+    setInterval(updateClock, 1000);
+    updateClock();
+});
+
+function launch(mode) {
+    state.type = mode;
+    document.getElementById('home').classList.add('hidden');
+    document.getElementById('game').classList.remove('hidden');
+    resize();
+    reset();
+}
+
+document.getElementById('go-fly').addEventListener('pointerdown', () => launch('fly'));
+document.getElementById('go-jump').addEventListener('pointerdown', () => launch('jump'));
+document.getElementById('go-dash').addEventListener('pointerdown', () => launch('dash'));
+document.getElementById('btn-retry').addEventListener('pointerdown', reset);
+document.getElementById('btn-home').addEventListener('pointerdown', () => {
+    state.active = false;
+    document.getElementById('game').classList.add('hidden');
+    document.getElementById('home').classList.remove('hidden');
+});
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+function reset() {
+    state.score = 0; state.f = 0; state.active = true;
+    entities = []; particles = [];
+    player.y = canvas.height / 2; player.v = 0;
+    document.getElementById('over').classList.add('hidden');
+    document.getElementById('score-num').innerText = "0";
+    loop();
+}
+
+function explode() {
+    for(let i=0; i<20; i++) {
+        particles.push({
+            x: player.x + 20, y: player.y + 20,
+            vx: (Math.random()-0.5)*15, vy: (Math.random()-0.5)*15,
+            life: 1.0, c: state.type === 'fly' ? '#ff4554' : '#00c3e3'
+        });
+    }
+}
+
+function die() {
+    state.active = false;
+    explode();
+    sfx(60, 0.5, 'sawtooth');
+    document.getElementById('over').classList.remove('hidden');
+}
+
+function loop() {
+    if (!state.active) {
+        // Continue rendering particles even if dead
+        renderParticles();
+        if(particles.length > 0) requestAnimationFrame(loop);
+        return;
+    }
+    
+    ctx.fillStyle = '#050507';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    state.f++;
+
+    if (state.type === 'fly') {
+        player.v += 0.45; player.y += player.v;
+        if (state.f % 90 === 0) entities.push({x: canvas.width, h: Math.random()*(canvas.height-250)+80, g: 190, hit: false});
+        ctx.fillStyle = 'rgba(255, 69, 84, 0.8)';
+        entities.forEach(e => {
+            e.x -= 6;
+            ctx.fillRect(e.x, 0, 70, e.h);
+            ctx.fillRect(e.x, e.h + e.g, 70, canvas.height);
+            if (e.x < player.x + 40 && e.x + 70 > player.x && (player.y < e.h || player.y + 40 > e.h + e.g)) die();
+            if (!e.hit && e.x < player.x) { e.hit = true; state.score++; document.getElementById('score-num').innerText = state.score; sfx(900, 0.1); }
+        });
+        if (player.y > canvas.height || player.y < 0) die();
+    } 
+
+    else if (state.type === 'jump') {
+        player.v += 0.9; player.y += player.v;
+        let ground = canvas.height - 80;
+        if (player.y > ground - 45) { player.y = ground - 45; player.v = 0; }
+        if (state.f % 60 === 0) entities.push({x: canvas.width, w: 50, h: 50, hit: false});
+        ctx.fillStyle = '#111'; ctx.fillRect(0, ground, canvas.width, 80);
+        ctx.fillStyle = '#00c3e3';
+        entities.forEach(e => {
+            e.x -= 8;
+            ctx.fillRect(e.x, ground - e.h, e.w, e.h);
+            if (e.x < player.x + 45 && e.x + e.w > player.x && player.y + 45 > ground - e.h) die();
+            if (!e.hit && e.x < player.x) { e.hit = true; state.score++; document.getElementById('score-num').innerText = state.score; sfx(1100, 0.1); }
+        });
+    }
+
+    else if (state.type === 'dash') {
+        let target = player.v === 0 ? canvas.height * 0.35 : canvas.height * 0.65;
+        player.y += (target - player.y) * 0.25;
+        if (state.f % 45 === 0) entities.push({x: canvas.width, y: Math.random() > 0.5 ? canvas.height*0.35 : canvas.height*0.65, hit: false});
+        ctx.fillStyle = '#444';
+        entities.forEach(e => {
+            e.x -= 12;
+            ctx.fillRect(e.x, e.y, 50, 50);
+            if (e.x < player.x + 45 && e.x + 50 > player.x && Math.abs(player.y - e.y) < 35) die();
+            if (!e.hit && e.x < player.x) { e.hit = true; state.score++; document.getElementById('score-num').innerText = state.score; sfx(1400, 0.05, 'square'); }
+        });
+    }
+
+    renderParticles();
+
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = state.type === 'fly' ? '#ff4554' : '#00c3e3';
+    ctx.fillStyle = 'white';
+    ctx.fillRect(player.x, player.y, 45, 45);
+    ctx.shadowBlur = 0;
+
+    entities = entities.filter(e => e.x > -100);
+    requestAnimationFrame(loop);
+}
+
+function renderParticles() {
+    particles.forEach((p, i) => {
+        p.x += p.vx; p.y += p.vy;
+        p.life -= 0.02;
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.c;
+        ctx.fillRect(p.x, p.y, 8, 8);
+        if(p.life <= 0) particles.splice(i, 1);
+    });
+    ctx.globalAlpha = 1;
+}
+
+const input = (e) => {
+    if (!state.active) return;
+    if (state.type === 'fly') player.v = -9;
+    if (state.type === 'jump' && player.v === 0) player.v = -21;
+    if (state.type === 'dash') player.v = player.v === 0 ? 1 : 0;
+    sfx(400, 0.05, 'triangle');
+    if (e) e.preventDefault();
+};
+
+window.addEventListener('touchstart', input, {passive: false});
+window.addEventListener('mousedown', input);
+window.addEventListener('resize', resize);
+</script>
+</body>
+  </html>
